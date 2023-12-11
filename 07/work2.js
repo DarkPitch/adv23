@@ -3,8 +3,8 @@ const fs = require('fs')
 const fileContents = fs.readFileSync('./input.txt').toString()
 
 
-const test = `32T3K 765
-T55J5 684
+const test = `TTJJK 765
+77827 684
 KK677 28
 KTJJT 220
 QQQJA 483`
@@ -13,7 +13,7 @@ const c = fileContents.split("\n");
 
 const length = c.length
 
-const cardRank = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3","2","J"];
+const cardRank = ["A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3","2","J"];
 
 
 function calculateHandRank(hand){
@@ -24,6 +24,9 @@ function calculateHandRank(hand){
     const numjokers = hand.split("").filter(item => item ==="J").length
     
     for (let i = 0; i < hand.length; i++) {
+        if (hand[i]=== "J"){
+            continue;
+        }
         if(!handObj[hand[i]]){
             handObj[hand[i]] = 0
         }
@@ -31,44 +34,150 @@ function calculateHandRank(hand){
         
     }
     let handRank;
-    const handVals = Object.values(handObj)
-    for (let i = 0; i < handVals.length; i++) {
-        const curr = handVals[i];
+    const handVals = Object.values(handObj).sort((a,b)=>b-a);
+ 
+
+        const curr = handVals[0] ?? 0;
         if (curr === 5) {
             handRank =  0
-            break;
         }
         if(curr === 4){
-            handRank =  1
-            break;
+            handRank =  1 -numjokers
         }
         if(curr === 3){
-            if (handRank === 5){
-                handRank =2
-                break;
+            if (handVals[1]===2){
+                handRank = 2 - numjokers *2
             } else {
-                handRank = 3
+                switch (numjokers){
+                    case 1:
+                        handRank = 1
+                        break
+                    case 2:
+                        handRank = 0
+                        break
+                    default:
+                        handRank = 3
+            }
             }
         }
         if(curr === 2){
-            if(handRank===5){
+            if(handVals[1]===2){
+                switch (numjokers){
+                    case 1:
+                        handRank = 2
+                        break
+                    default:
+                        handRank = 4
+            }
                 handRank = 4
-                break
-            } else if(handRank===3){
-                handRank=2
-                break
             } else {
-                handRank = 5
+                switch (numjokers){
+                    case 1:
+                        handRank = 3
+                        break
+                    case 2:
+                        handRank = 1
+                        break
+                    case 3:
+                        handRank = 0
+                        break
+                    default:
+                        handRank = 5
+            }
+        }}
+        if(curr === 1){
+            switch (numjokers){
+                case 1:
+                    handRank = 5
+                    break
+                case 2:
+                    handRank = 3
+                    break
+                case 3:
+                    handRank = 1
+                    break
+                case 4:
+                    handRank = 0
+                    break
+                default:
+                    handRank = 6
             }
         }
-        if(curr === 1 && !handRank){
-            handRank = 6
+
+
+        if (numjokers === 5){
+            handRank=0
         }
-    }
-    if (numjokers){
-        handRank = Math.max(0, handRank - numjokers)
-    }
-    return [handRank, cardsecRank]
+//     if(numjokers ===1){
+//         switch (handRank) {
+//             case 1:
+//                 handRank = 0
+//                 break;
+            
+//             case 2:
+//                 handRank = 1
+//                 break;
+//             case 3:
+//                 handRank = 1
+//                 break;
+//             case 4:
+//                 handRank = 2
+//                 break;
+//             case 5:
+//                 handRank = 3
+//                 break;
+//             case 6:
+//                 handRank = 5
+//                 break;
+        
+//             default:
+//                 break;
+//         }
+// }
+// if(numjokers ===2){
+//     switch (handRank) {
+//         case 3:
+//             handRank = 0
+//             break;
+//         case 5:
+//             handRank = 1
+//             break;
+//         case 6:
+//             handRank = 3
+//             break;
+    
+//         default:
+//             break;
+//     }
+// }
+// if(numjokers ===3){
+//     switch (handRank) {
+//         case 5:
+//             handRank = 0
+//             break;
+//         case 6:
+//             handRank = 1
+//             break;
+    
+//         default:
+//             break;
+//     }
+// }
+// if(numjokers ===4){
+//     switch (handRank) {
+//         case 6:
+//             handRank = 0
+//             break;
+    
+//         default:
+//             break;
+//     }
+// }
+if(numjokers ===5){
+    handRank = 0
+}
+    
+    return [handRank, cardsecRank, hand]
 }
 
 function processHand(handstr){
@@ -86,11 +195,9 @@ const rankedCards = c.map(item=>processHand(item))
 const sorted = rankedCards.sort((a,b)=>{
     if (a.strength[0] < b.strength[0]){
         return -1
-    }
-    if (a.strength[0] > b.strength[0]){
+    } else  if (a.strength[0] > b.strength[0]){
         return 1
-    }
-    if (a.strength[0] === b.strength[0]){
+    } else if (a.strength[0] === b.strength[0]){
         let i = 0;
         while (a.strength[1][i] === b.strength[1][i] && i < a.strength[1].length){
             i++
@@ -98,8 +205,9 @@ const sorted = rankedCards.sort((a,b)=>{
         if(a.strength[1][i] === b.strength[1][i]) {
             return 0;
         }
-        return a.strength[1][i] < b.strength[1][i] ? -1: 1
+        return a.strength[1][i] < b.strength[1][i] ? -1: 11
     }
+    throw new Error(`failed on a = ${a.strength} b = ${b.strength}`)
 
 })
 
@@ -110,31 +218,8 @@ for (let index = 0; index < sorted.length; index++) {
     
 }
 
+const g = sorted.map(item=>item.strength[2])
+
+
+
 console.debug("this", total)
-
-function checkDigit(char){
-
-    return char !== " " && char >= 0 && char <= 9;
-}
-
-function parseNumArr(nums){
-    const numArr = []
-    let currNum = ""
-    for(let k=0; k< nums.length;k++){
-        const currChar = nums[k]
-        if (checkDigit(currChar)){
-            currNum = `${currNum}${currChar}`
-            if (k === nums.length -1){
-                numArr.push(parseInt(currNum))
-            }
-        } else {
-            if (currNum) {
-                numArr.push(parseInt(currNum))
-            }
-            
-            currNum = ""
-        }
-        
-    }
-    return numArr
-}
